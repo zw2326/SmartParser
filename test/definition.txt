@@ -1,0 +1,4 @@
+[TESTS]
+name = leetcode; description = leetcode problem page; matchMaxDepth = 1; element = .findChild(); assert = len(matches) == 336
+name = baidu; description = baidu home page; element = .findChild(); assert = len(matches) == 16
+name = stackoverflow; description = one stack overflow page; element = .findChild(); assert = len(matches) == 20
