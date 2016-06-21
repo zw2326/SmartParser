@@ -2,6 +2,46 @@
 # SmartParser 2.2
 #   - Added matchMaxDepth feature, separated match recursive and non-recursive methods, added debug control, added correctness test infrastructure, added basic test coverage
 #   - Added ability to dump settings, init with an empty element
+
+# What does this script do:
+#     The SmartParser class greps those elements that have the same structure as a given exemplar element. It accepts an HTML element
+#     as the exemplar, as well as an HTML page to search within. It outputs a list of matching elements in the HTML page. The following
+#     parameters can be configured for the matching process:
+#     @self.matchType:      This parameter controls how strict the matching (nonrecursive) of two elements should be. It can choose from
+#                           SmartParser.MATCHTYPE['strict'], which means both element tag and attribute should match, or
+#                           SmartParser.MATCHTYPE['loose'], which means matching element tag only is enough.
+#                           The default value is SmartParser.MATCHTYPE['loose'].
+#     @self.matchMaxDepth:  This parameter controls how deep the matching process should proceed. The exemplar element root's depth is 0.
+#                           The default value is float('inf').
+#     @self.matchTolerance: This parameter controls how strict the matching (recursive) of two elements should be. It can choose from
+#                           SmartParser.MATCHTOLERANCE['matchAll'], which means consider it a match only if all children match, or
+#                           SmartParser.MATCHTOLERANCE['matchMissingChild'], which means consider it still a match if some children in
+#                             the exemplar element are missing in the candidate, or
+#                           SmartParser.MATCHTOLERANCE['matchRedundantChild'], which means consider it still a match if some children in
+#                             the candidate are missing in the exemplar element.
+#                           The default value is SmartParser.MATCHTOLERANCE['matchAll'].
+#     @self.matchInsideElement: This parameter has not been used. (it is intended to provide the functionality to search within a given
+#                               element in the HTML page)
+#
+# How to use this script:
+#     This script can be imported as an ordinary module. When it is run directly, by default it will run the three correctness tests.
+#     If parameter tmpTest in the main function is set to True, you can fill in the corresponding slot with your temporary test.
+#     If parameter oneTimeTest is set to True, you can define your own sanity test in the corresponding slot.
+#     The member variables self.debug, self.debugPause and self.debugVerbose control the debug information. Set to True to turn them on.
+#
+# Usage example: (the following code greps all interview problems on LeetCode)
+'''
+from bs4 import BeautifulSoup as BS
+import SmartParser.SmartParser as SP
+import urllib2
+
+sp = SP.SmartParser() # create parser instance
+sp.element = BS('<tr><td><span class="None"> </span></td><td>353</td><td><a href="/problems/design-snake-game/">Design Snake Game</a><i class="fa fa-lock"></i></td><td>18.2%</td><td value="false"></td><td class="hide" value="False"></td><td value="218.2%">Medium</td></tr>', 'html.parser').findChild() # use one interview problem as exemplar element
+sp.matchMaxDepth = 1 # tweak parameter
+matches = sp.Parse(BS(urllib2.urlopen('https://leetcode.com/problemset/algorithms/').read(), 'html.parser')) # find matches
+print '{0} items found on leetcode.com.'.format(len(matches))
+'''
+
 from collections import defaultdict
 import bs4
 import inspect
@@ -59,7 +99,7 @@ class SmartParser(object):
 		# for each candidate, further check if its structure matches our element
 		matches = []
 		for candidate in candidates:
-			if self.IsMatchRecursive(candidate, element, 0):
+			if self.IsMatchRecursive(candidate, self.element, 0):
 				matches.append(candidate)
 		self.Debug('Number of matches: {0}'.format(len(matches)))
 		for i in matches:
