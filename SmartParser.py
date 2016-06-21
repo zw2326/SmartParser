@@ -1,8 +1,10 @@
 # -*- coding: gb2312 -*-
-# SmartParser 2.1
+# SmartParser 2.2
 #   - Added matchMaxDepth feature, separated match recursive and non-recursive methods, added debug control, added correctness test infrastructure, added basic test coverage
+#	- Added ability to dump settings, init with an empty element
 from collections import defaultdict
 import bs4
+import inspect
 import os
 import sys
 import urllib2
@@ -11,9 +13,9 @@ class SmartParser(object):
 	MATCHTOLERANCE = {'matchAll': 0, 'matchMissingChild': 1, 'matchRedundantChild': 2}
 	MATCHTYPE = {'strict': 0, 'loose': 1}
 
-	def __init__(self, element):
+	def __init__(self, element = None):
 		''' accepts an html snippet that defines the target element '''
-		if not isinstance(element, bs4.element.Tag):
+		if element != None and not isinstance(element, bs4.element.Tag):
 			raise Exception('Unsupported target element type: {0}'.format(type(element)))
 		self.element = element
 
@@ -38,10 +40,11 @@ class SmartParser(object):
 	def Parse(self, html):
 		''' accepts an html, returns all pattern-matching elements '''
 		self.Debug('In function Parse():')
+		if not isinstance(self.element, bs4.element.Tag):
+			raise Exception('Target element has not been set.')
 
 		# get outermost element name and element attributes
 		eleTag, eleAttrs = self.element.name, self.element.attrs
-
 		self.Debug('element name: {0} \t attrs: {1}'.format(eleTag, eleAttrs))
 
 		# get all matching candidates in the html
@@ -49,7 +52,6 @@ class SmartParser(object):
 			candidates = html.find_all(eleTag, attrs = eleAttrs)
 		else:
 			candidates = html.find_all(eleTag)
-		
 		self.Debug('Number of candidates: {0}'.format(len(candidates)))
 		for i in candidates:
 			self.DebugVerbose(i.prettify().encode('utf-8'))
@@ -59,7 +61,6 @@ class SmartParser(object):
 		for candidate in candidates:
 			if self.IsMatchRecursive(candidate, element, 0):
 				matches.append(candidate)
-
 		self.Debug('Number of matches: {0}'.format(len(matches)))
 		for i in matches:
 			self.DebugVerbose(i.prettify().encode('utf-8'))
@@ -83,7 +84,7 @@ class SmartParser(object):
 				return False
 			child1, child2 = child1.findNextSibling(), child2.findNextSibling()
 
-		if not self.matchMissingChild and child1 != None or child2 != None: # number of children differ
+		if self.matchTolerance != SmartParser.MATCHTOLERANCE['matchMissingChild'] and child1 != None or child2 != None: # number of children differ
 			self.DebugVerbose('Number of children differ: {0}\n{1}'.format(element1.prettify().encode('utf-8'), element2.prettify().encode('utf-8')))
 			return False
 
@@ -119,11 +120,21 @@ class SmartParser(object):
 			if self.debugPause:
 				raw_input()
 
+	def Settings(self):
+		''' return all settings of current SmartParser instance '''
+		attrs = [attr for attr in vars(self).items() if not callable(attr) and not inspect.ismethod(attr)]
+		self.Debug('\n'.join('{0} = {1}'.format(pair[0], pair[1]) for pair in attrs))
+		return attrs
+
 
 if __name__ == '__main__':
+	tmpTest = False
 	oneTimeTest = False
 
-	if oneTimeTest:
+	if tmpTest:
+		pass
+
+	elif oneTimeTest:
 		# load element and html from files
 		# BeautifulSoup will take a snippet as an html and encapsulate it with "document",
 		# therefore we need to get the actual content to pass in the SmartParser
