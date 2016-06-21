@@ -1,7 +1,7 @@
 # -*- coding: gb2312 -*-
 # SmartParser 2.2
 #   - Added matchMaxDepth feature, separated match recursive and non-recursive methods, added debug control, added correctness test infrastructure, added basic test coverage
-#	- Added ability to dump settings, init with an empty element
+#   - Added ability to dump settings, init with an empty element
 from collections import defaultdict
 import bs4
 import inspect
